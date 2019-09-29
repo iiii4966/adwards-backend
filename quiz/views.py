@@ -51,6 +51,31 @@ class QuizView(View):
         except KeyError:
             return JsonResponse({"ERROR":"MISSING_DATA"}, status=400)
 
+class QuizEditView(View):
+    @advertiser_login_required
+    def post(self, request, quiz_id):
+        try:
+            data = json.loads(request.body)
+            for edit_data in data['quizzes']
+                quiz = Question.objects.get(pk=edit_data["quiz_id"], advertisement__advertiser = request.user)
+                quiz.content = edit_data['content']
+                quiz.title = edit_data['title']
+                quiz.save()
+                if 'answer_type' in edit_data:
+                    quiz.answer_type = AnswerType.objects.get(name = edit_data['answer_type'])
+                if 'question_type' in data:
+                    quiz.question_type = QuestionType.objects.get(name = edit_data['question_type'])
+                
+                choices = quiz.choices_set.all()
+                for exist_choice, edit_choice in zip(choices, edit_data["choices"]):
+                    exist_choice.question = quiz
+                    exist_choice.content = edit_choice
+                    exist_choice.save()
+
+               return HttpResponse(status=204) 
+        except Question.DoesNotExist:
+            return JsonResponse({"ERROR":"NOT_FOUND"}, status =404)
+
 class QuizCorrectView(View):
     @user_login_required
     def post(self, request):
